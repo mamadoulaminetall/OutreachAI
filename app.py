@@ -110,7 +110,7 @@ def render_sidebar():
         st.divider()
         page = st.radio(
             "Navigation",
-            ["📊 Revenue", "✉️ Prospects", "📋 Campaigns", "⚙️ Settings"],
+            ["📊 Revenue", "✉️ Prospects", "📋 Campaigns", "📈 Analytics", "⚙️ Settings"],
             label_visibility="collapsed",
         )
         st.divider()
@@ -467,7 +467,115 @@ def render_campaigns():
 
 
 # ---------------------------------------------------------------------------
-# Page 4 — Settings
+# Page 4 — Analytics
+# ---------------------------------------------------------------------------
+GITHUB_REPOS = [
+    {"name": "BioReport AI",      "repo": "mamadoulaminetall/BioReport-AI",        "url": "https://bioreport-ai.streamlit.app"},
+    {"name": "GenGI",             "repo": "mamadoulaminetall/GenGI",               "url": "https://gengi-ai.streamlit.app"},
+    {"name": "MYOomics",          "repo": "mamadoulaminetall/MYOomics",            "url": "https://myoomics.streamlit.app"},
+    {"name": "OutreachAI",        "repo": "mamadoulaminetall/OutreachAI",          "url": "https://outreach-ai.streamlit.app"},
+    {"name": "MedFlow Landing",   "repo": "mamadoulaminetall/MedFlowAI_Landing",   "url": "https://medflow-ai.streamlit.app"},
+]
+
+@st.cache_data(ttl=300)
+def fetch_github_stats(repo: str) -> dict:
+    import requests
+    try:
+        r = requests.get(f"https://api.github.com/repos/{repo}", timeout=6,
+                         headers={"Accept": "application/vnd.github+json"})
+        if r.status_code == 200:
+            d = r.json()
+            return {
+                "stars": d.get("stargazers_count", 0),
+                "forks": d.get("forks_count", 0),
+                "watchers": d.get("watchers_count", 0),
+                "open_issues": d.get("open_issues_count", 0),
+                "last_push": d.get("pushed_at", "")[:10],
+                "error": None,
+            }
+        return {"error": f"HTTP {r.status_code}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def render_analytics():
+    import requests
+    st.markdown("<div class='section-title'>📈 Analytics</div>", unsafe_allow_html=True)
+
+    # --- GitHub Stats ---
+    st.markdown("#### GitHub — Repos MedFlow AI")
+    cols = st.columns(len(GITHUB_REPOS))
+    total_stars = 0
+    for i, repo_info in enumerate(GITHUB_REPOS):
+        stats = fetch_github_stats(repo_info["repo"])
+        stars = stats.get("stars", 0)
+        total_stars += stars
+        with cols[i]:
+            st.markdown(f"""
+            <div class='kpi-card' style='padding:0.9rem;'>
+              <div style='font-size:0.75rem;color:#94a3b8;margin-bottom:4px;'>{repo_info['name']}</div>
+              <div style='font-size:1.4rem;font-weight:700;color:#f1f5f9;'>⭐ {stars}</div>
+              <div style='font-size:0.7rem;color:#64748b;margin-top:2px;'>
+                🍴 {stats.get('forks',0)} · 👁 {stats.get('watchers',0)}<br>
+                🕐 {stats.get('last_push','—')}
+              </div>
+              {'<div style="color:#ef4444;font-size:0.65rem;">'+stats['error']+'</div>' if stats.get('error') else ''}
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown(f"<br><div style='color:#94a3b8;font-size:0.8rem;'>Total stars : <b style='color:#fbbf24;'>{total_stars} ⭐</b> — actualisé toutes les 5 min</div>", unsafe_allow_html=True)
+
+    st.divider()
+
+    # --- LinkedIn Stats (manual) ---
+    st.markdown("#### LinkedIn — Saisie manuelle")
+    st.info("LinkedIn n'a pas d'API publique — entre tes stats manuellement (depuis linkedin.com/company/medflow-ai → Analytics).")
+
+    with st.form("linkedin_form"):
+        c1, c2, c3, c4 = st.columns(4)
+        followers  = c1.number_input("Abonnés page", min_value=0, value=st.session_state.get("li_followers", 0))
+        impressions = c2.number_input("Impressions (7j)", min_value=0, value=st.session_state.get("li_impressions", 0))
+        clicks     = c3.number_input("Clics (7j)", min_value=0, value=st.session_state.get("li_clicks", 0))
+        leads      = c4.number_input("Contacts entrants", min_value=0, value=st.session_state.get("li_leads", 0))
+        if st.form_submit_button("💾 Sauvegarder"):
+            st.session_state["li_followers"]   = followers
+            st.session_state["li_impressions"] = impressions
+            st.session_state["li_clicks"]      = clicks
+            st.session_state["li_leads"]       = leads
+            st.success("Stats LinkedIn mises à jour.")
+
+    if st.session_state.get("li_followers"):
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Abonnés",       st.session_state["li_followers"])
+        c2.metric("Impressions 7j", st.session_state["li_impressions"])
+        c3.metric("Clics 7j",       st.session_state["li_clicks"])
+        c4.metric("Leads entrants", st.session_state["li_leads"])
+
+    st.divider()
+
+    # --- Landing page visits (UTM / manual) ---
+    st.markdown("#### Landing Page — Visites")
+    st.info("Streamlit Cloud ne fournit pas de stats de visites. Ajoute Google Analytics à ta landing page pour un suivi automatique — ou entre les stats manuellement depuis share.streamlit.io.")
+    with st.form("landing_form"):
+        c1, c2, c3 = st.columns(3)
+        visits_7d  = c1.number_input("Visites (7j)",   min_value=0, value=st.session_state.get("lp_visits7",  0))
+        visits_30d = c2.number_input("Visites (30j)",  min_value=0, value=st.session_state.get("lp_visits30", 0))
+        bounces    = c3.number_input("Taux rebond (%)", min_value=0, value=st.session_state.get("lp_bounce",  0))
+        if st.form_submit_button("💾 Sauvegarder"):
+            st.session_state["lp_visits7"]  = visits_7d
+            st.session_state["lp_visits30"] = visits_30d
+            st.session_state["lp_bounce"]   = bounces
+            st.success("Stats landing mises à jour.")
+
+    if st.session_state.get("lp_visits7"):
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Visites 7j",     st.session_state["lp_visits7"])
+        c2.metric("Visites 30j",    st.session_state["lp_visits30"])
+        c3.metric("Taux rebond",    f"{st.session_state['lp_bounce']} %")
+
+
+# ---------------------------------------------------------------------------
+# Page 5 — Settings
 # ---------------------------------------------------------------------------
 def render_settings():
     st.markdown("<div class='section-title'>⚙️ Settings</div>", unsafe_allow_html=True)
@@ -549,6 +657,8 @@ def main():
         render_prospects()
     elif page == "📋 Campaigns":
         render_campaigns()
+    elif page == "📈 Analytics":
+        render_analytics()
     elif page == "⚙️ Settings":
         render_settings()
 
