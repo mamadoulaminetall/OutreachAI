@@ -8,11 +8,34 @@ import csv
 import os
 from dotenv import load_dotenv
 
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 load_dotenv()
 
 from db import init_db, add_prospect, get_all_prospects, update_prospect, delete_prospect, get_stats
 from email_generator import generate_email
 from stripe_client import get_revenue, get_subscriptions
+
+
+def send_gmail(to_email: str, subject: str, body: str) -> tuple[bool, str]:
+    gmail = os.environ.get("GMAIL_ADDRESS", "")
+    pwd   = os.environ.get("GMAIL_APP_PASSWORD", "")
+    if not gmail or not pwd:
+        return False, "GMAIL_ADDRESS ou GMAIL_APP_PASSWORD manquant dans Settings."
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"]    = gmail
+        msg["To"]      = to_email
+        msg.attach(MIMEText(body, "plain"))
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(gmail, pwd)
+            server.sendmail(gmail, to_email, msg.as_string())
+        return True, "Email envoyé."
+    except Exception as exc:
+        return False, str(exc)
 
 st.set_page_config(
     page_title="OutreachAI — Sales Dashboard",
@@ -389,7 +412,16 @@ def render_campaigns():
                 subject = next((l.replace("Subject:", "").replace("Objet:", "").strip() for l in lines if l.startswith(("Subject:", "Objet:"))), "")
                 body_text = "\n".join(l for l in lines if not l.startswith(("Subject:", "Objet:"))).strip()
                 mailto = f"mailto:{row['email']}?subject={subject}&body={body_text[:800]}"
-                st.markdown(f"[📨 Ouvrir dans votre client mail]({mailto})")
+                col_mailto, col_send = st.columns([1, 1])
+                col_mailto.markdown(f"[📨 Ouvrir dans votre client mail]({mailto})")
+                if col_send.button("📤 Envoyer maintenant", key=f"send_{pid}", use_container_width=True):
+                    ok, msg = send_gmail(row["email"], subject, body_text)
+                    if ok:
+                        update_prospect(pid, status="sent", date_sent=datetime.now().strftime("%Y-%m-%d %H:%M"))
+                        st.success(f"Envoyé à {row['email']} — statut mis à jour.")
+                        st.rerun()
+                    else:
+                        st.error(f"Erreur : {msg}")
 
     # Funnel chart
     st.divider()
@@ -432,9 +464,23 @@ def render_settings():
             type="password",
             placeholder="sk_live_...",
         )
+        st.markdown("**Gmail SMTP** (pour l'envoi automatique)")
+        gmail_address = st.text_input(
+            "GMAIL_ADDRESS",
+            value=os.environ.get("GMAIL_ADDRESS", ""),
+            placeholder="mamadoulaminetallgithub@gmail.com",
+        )
+        gmail_password = st.text_input(
+            "GMAIL_APP_PASSWORD",
+            value=os.environ.get("GMAIL_APP_PASSWORD", ""),
+            type="password",
+            placeholder="xxxx xxxx xxxx xxxx",
+        )
         if st.form_submit_button("💾 Sauvegarder dans la session", type="primary"):
             os.environ["ANTHROPIC_API_KEY"] = anthropic_key
             os.environ["STRIPE_API_KEY"] = stripe_key
+            os.environ["GMAIL_ADDRESS"] = gmail_address
+            os.environ["GMAIL_APP_PASSWORD"] = gmail_password
             st.success("Clés mises à jour pour cette session.")
 
     st.divider()
