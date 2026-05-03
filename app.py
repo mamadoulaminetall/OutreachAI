@@ -363,6 +363,30 @@ def render_campaigns():
 
     st.caption(f"{len(df)} prospect(s) affiché(s)")
 
+    # Bulk send
+    drafts = [p for p in prospects if p["status"] == "draft" and p.get("generated_email")]
+    if drafts:
+        if st.button(f"📤 Envoyer tous les drafts ({len(drafts)})", type="primary"):
+            if not os.environ.get("GMAIL_ADDRESS") or not os.environ.get("GMAIL_APP_PASSWORD"):
+                st.error("Configurez GMAIL_ADDRESS et GMAIL_APP_PASSWORD dans ⚙️ Settings.")
+            else:
+                progress = st.progress(0)
+                ok_count, fail_count = 0, 0
+                for i, p in enumerate(drafts):
+                    progress.progress((i + 1) / len(drafts))
+                    lines = p["generated_email"].split("\n")
+                    subject = next((l.replace("Subject:", "").replace("Objet:", "").strip() for l in lines if l.startswith(("Subject:", "Objet:"))), "")
+                    body_text = "\n".join(l for l in lines if not l.startswith(("Subject:", "Objet:"))).strip()
+                    ok, _ = send_gmail(p["email"], subject, body_text)
+                    if ok:
+                        update_prospect(p["id"], status="sent", date_sent=datetime.now().strftime("%Y-%m-%d %H:%M"))
+                        ok_count += 1
+                    else:
+                        fail_count += 1
+                progress.empty()
+                st.success(f"✅ {ok_count} emails envoyés. ❌ {fail_count} échecs.")
+                st.rerun()
+
     # Export
     if st.button("⬇️ Exporter CSV"):
         buf = io.StringIO()
