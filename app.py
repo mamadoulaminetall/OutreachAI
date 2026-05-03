@@ -264,11 +264,14 @@ def render_prospects():
                 if not os.environ.get("ANTHROPIC_API_KEY"):
                     st.error("Clé ANTHROPIC_API_KEY manquante.")
                 else:
-                    prod_obj = next((p for p in products if p["name"] == prod_csv), products[0])
+                    default_prod = next((p for p in products if p["name"] == prod_csv), products[0])
                     results = []
                     progress = st.progress(0)
                     for i, row in df.iterrows():
                         progress.progress((i + 1) / len(df))
+                        # Use per-row product if present in CSV, else fall back to dropdown
+                        row_prod_name = str(row.get("product", "")).strip()
+                        prod_obj = next((p for p in products if p["name"] == row_prod_name), default_prod)
                         try:
                             text = generate_email(
                                 name=str(row.get("name", "")),
@@ -285,7 +288,7 @@ def render_prospects():
                                 company=str(row.get("company", "")),
                                 role=str(row.get("role", "")),
                                 context=str(row.get("context", "")),
-                                product=prod_csv,
+                                product=prod_obj["name"],
                                 generated_email=text,
                             )
                             results.append({"name": row.get("name"), "email": row.get("email"), "status": "✅"})
