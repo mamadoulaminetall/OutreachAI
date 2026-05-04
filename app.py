@@ -110,7 +110,7 @@ def render_sidebar():
         st.divider()
         page = st.radio(
             "Navigation",
-            ["📊 Revenue", "✉️ Prospects", "📋 Campaigns", "📈 Analytics", "⚙️ Settings"],
+            ["📊 Revenue", "✉️ Prospects", "📋 Campaigns", "📈 Analytics", "🌐 Référencement", "⚙️ Settings"],
             label_visibility="collapsed",
         )
         st.divider()
@@ -575,7 +575,185 @@ def render_analytics():
 
 
 # ---------------------------------------------------------------------------
-# Page 5 — Settings
+# Page 5 — Référencement
+# ---------------------------------------------------------------------------
+BIOTOOLS_ENTRIES = [
+    {
+        "name": "BioReport AI",
+        "description": "AI-powered clinical lab report interpreter. Upload a PDF or paste text to get a structured 5-section report: anomalies, clinical interpretation, diagnoses, and recommendations.",
+        "homepage": "https://bioreport-ai.streamlit.app",
+        "topics": [{"uri":"http://edamontology.org/topic_3344","term":"Biomedical science"},{"uri":"http://edamontology.org/topic_3577","term":"Medicine"}],
+        "functions": [{"operation":[{"uri":"http://edamontology.org/operation_0337","term":"Visualisation"}],"input":[],"output":[]}],
+        "toolType": ["Web application"],
+        "language": ["Python"],
+        "operatingSystem": ["Linux","Mac","Windows"],
+        "license": "Proprietary",
+        "credit": [{"name":"Mamadou Lamine TALL","url":"https://github.com/mamadoulaminetall","typeRole":["Developer"]}],
+    },
+    {
+        "name": "GenGI",
+        "description": "Variant pathogenicity prediction from whole-exome sequencing data using a DNA language model (Nucleotide Transformer). Supports clinical interpretation of missense and rare variants.",
+        "homepage": "https://gengi-ai.streamlit.app",
+        "topics": [{"uri":"http://edamontology.org/topic_0622","term":"Genomics"},{"uri":"http://edamontology.org/topic_0199","term":"Genetic variation"},{"uri":"http://edamontology.org/topic_3673","term":"Whole genome sequencing"}],
+        "functions": [{"operation":[{"uri":"http://edamontology.org/operation_3661","term":"SNP annotation"}],"input":[],"output":[]}],
+        "toolType": ["Web application"],
+        "language": ["Python"],
+        "operatingSystem": ["Linux","Mac","Windows"],
+        "license": "Proprietary",
+        "credit": [{"name":"Mamadou Lamine TALL","url":"https://github.com/mamadoulaminetall","typeRole":["Developer"]}],
+    },
+    {
+        "name": "MYOomics",
+        "description": "scRNA-seq multi-omics platform for myopathy and neuromuscular disease research. Supports UMAP clustering, Leiden annotation, pseudotime trajectories, and multi-omics integration.",
+        "homepage": "https://myoomics.streamlit.app",
+        "topics": [{"uri":"http://edamontology.org/topic_3308","term":"Transcriptomics"},{"uri":"http://edamontology.org/topic_3170","term":"RNA-Seq"},{"uri":"http://edamontology.org/topic_0203","term":"Gene expression"}],
+        "functions": [{"operation":[{"uri":"http://edamontology.org/operation_3800","term":"RNA-Seq quantification"}],"input":[],"output":[]}],
+        "toolType": ["Web application"],
+        "language": ["Python"],
+        "operatingSystem": ["Linux","Mac","Windows"],
+        "license": "Proprietary",
+        "credit": [{"name":"Mamadou Lamine TALL","url":"https://github.com/mamadoulaminetall","typeRole":["Developer"]}],
+    },
+    {
+        "name": "AMR-AI",
+        "description": "AI-powered antimicrobial resistance prediction and antibiogram interpretation for clinical microbiology labs. Supports AMR profiling and antibiotic treatment decision support.",
+        "homepage": "https://medflowailanding.streamlit.app",
+        "topics": [{"uri":"http://edamontology.org/topic_3301","term":"Microbiology"},{"uri":"http://edamontology.org/topic_3344","term":"Biomedical science"}],
+        "functions": [{"operation":[{"uri":"http://edamontology.org/operation_3461","term":"Virulence prediction"}],"input":[],"output":[]}],
+        "toolType": ["Web application"],
+        "language": ["Python"],
+        "operatingSystem": ["Linux","Mac","Windows"],
+        "license": "Proprietary",
+        "credit": [{"name":"Mamadou Lamine TALL","url":"https://github.com/mamadoulaminetall","typeRole":["Developer"]}],
+    },
+]
+
+def _submit_biotool(entry: dict, token: str) -> tuple[bool, str]:
+    import requests, json
+    payload = {
+        "name": entry["name"],
+        "description": entry["description"],
+        "homepage": entry["homepage"],
+        "biotoolsID": entry["name"].lower().replace(" ", "_").replace("-", "_"),
+        "topics": entry["topics"],
+        "functions": entry["functions"],
+        "toolType": entry["toolType"],
+        "language": entry["language"],
+        "operatingSystem": entry["operatingSystem"],
+        "license": entry["license"],
+        "credit": entry["credit"],
+    }
+    headers = {"Authorization": f"Token {token}", "Content-Type": "application/json"}
+    try:
+        r = requests.post("https://bio.tools/api/tool/", headers=headers,
+                          data=json.dumps(payload), timeout=15)
+        if r.status_code in (200, 201):
+            return True, f"✅ Soumis — https://bio.tools/{payload['biotoolsID']}"
+        return False, f"❌ HTTP {r.status_code} — {r.text[:200]}"
+    except Exception as e:
+        return False, f"❌ Erreur : {e}"
+
+
+def render_referencement():
+    st.markdown("<div class='section-title'>🌐 Référencement</div>", unsafe_allow_html=True)
+
+    tabs = st.tabs(["🔬 bio.tools", "🚀 Product Hunt", "🎈 Streamlit Gallery"])
+
+    # ── Tab 1 : bio.tools ──────────────────────────────────────────
+    with tabs[0]:
+        st.markdown("#### Soumettre sur bio.tools (ELIXIR)")
+        st.markdown("Crée ton compte sur [bio.tools/register](https://bio.tools/register), puis récupère ton token dans **Account → API token**.")
+        token = st.text_input("bio.tools API Token", type="password",
+                              value=os.environ.get("BIOTOOLS_TOKEN", ""),
+                              placeholder="Colle ton token ici")
+        if token:
+            os.environ["BIOTOOLS_TOKEN"] = token
+
+        st.markdown("---")
+        for entry in BIOTOOLS_ENTRIES:
+            with st.expander(f"**{entry['name']}** — {entry['homepage']}", expanded=False):
+                st.json({k: v for k, v in entry.items() if k != "functions"})
+                if st.button(f"📤 Soumettre {entry['name']} sur bio.tools",
+                             key=f"bt_{entry['name']}", type="primary"):
+                    if not token:
+                        st.error("Token manquant.")
+                    else:
+                        with st.spinner("Envoi…"):
+                            ok, msg = _submit_biotool(entry, token)
+                        if ok:
+                            st.success(msg)
+                        else:
+                            st.error(msg)
+
+        st.divider()
+        if st.button("📤 Soumettre les 4 outils d'un coup", type="primary"):
+            if not token:
+                st.error("Token manquant.")
+            else:
+                for entry in BIOTOOLS_ENTRIES:
+                    ok, msg = _submit_biotool(entry, token)
+                    st.write(f"**{entry['name']}** : {msg}")
+
+    # ── Tab 2 : Product Hunt ───────────────────────────────────────
+    with tabs[1]:
+        st.markdown("#### Post Product Hunt — MedFlow AI")
+        st.info("Crée ton post sur [producthunt.com/posts/new](https://www.producthunt.com/posts/new) — copie les champs ci-dessous.")
+
+        fields = {
+            "Nom du produit": "MedFlow AI",
+            "Tagline (60 car. max)": "AI clinical tools for lab reports, genomics & AMR",
+            "Description (260 car. max)": "MedFlow AI is a suite of specialized AI tools for clinicians and researchers: interpret lab reports, predict variant pathogenicity from WES, analyze scRNA-seq data, and decode antibiograms. Built by a PhD bioinformatician for daily clinical use.",
+            "Website": "https://medflowailanding.streamlit.app",
+            "Tags": "Artificial Intelligence, Health & Fitness, Science, SaaS, Developer Tools",
+            "Premier commentaire (maker)": """Hi PH! I'm Mamadou, PhD bioinformatician and founder of MedFlow AI.
+
+I built this because clinicians and researchers spend too much time on tasks AI can handle.
+
+MedFlow AI is a growing suite of focused tools:
+• BioReport AI — lab report → structured clinical report in seconds
+• GenGI — WES variant pathogenicity via DNA-LLM
+• MYOomics — scRNA-seq platform for neuromuscular disease research
+• AMR-AI — antimicrobial resistance prediction for microbiology labs
+• CardioSurg AI — surgical risk scoring with explainability
+
+All tools: https://medflowailanding.streamlit.app""",
+        }
+        for label, value in fields.items():
+            st.markdown(f"**{label}**")
+            st.code(value, language=None)
+
+    # ── Tab 3 : Streamlit Gallery ──────────────────────────────────
+    with tabs[2]:
+        st.markdown("#### Streamlit Community Gallery")
+        st.info("Soumets chaque app sur [streamlit.io/gallery](https://streamlit.io/gallery) → 'Submit an app'.")
+
+        apps = [
+            {"name": "BioReport AI", "url": "https://bioreport-ai.streamlit.app",
+             "github": "https://github.com/mamadoulaminetall/BioReport-AI",
+             "category": "Healthcare / Medicine",
+             "desc": "Upload a medical lab report (PDF, photo, or text) and get an AI-generated 5-section structured interpretation powered by Claude API."},
+            {"name": "GenGI — Genomic Variant AI", "url": "https://gengi-ai.streamlit.app",
+             "github": "https://github.com/mamadoulaminetall/GenGI",
+             "category": "Science & Technology / Bioinformatics",
+             "desc": "Predict variant pathogenicity from WES data using a DNA language model (Nucleotide Transformer)."},
+            {"name": "MYOomics — scRNA-seq Platform", "url": "https://myoomics.streamlit.app",
+             "github": "https://github.com/mamadoulaminetall",
+             "category": "Science & Technology / Bioinformatics",
+             "desc": "Interactive scRNA-seq analysis for myopathy research: UMAP, Leiden clustering, pseudotime, multi-omics integration."},
+            {"name": "OutreachAI — Sales Dashboard", "url": "https://outreach-ai.streamlit.app",
+             "github": "https://github.com/mamadoulaminetall/OutreachAI",
+             "category": "Business / Productivity",
+             "desc": "Track leads, revenue, and campaigns. Claude-powered personalized email generation for solo founders and small sales teams."},
+        ]
+        for app in apps:
+            with st.expander(f"**{app['name']}**", expanded=False):
+                for k, v in app.items():
+                    st.markdown(f"**{k.capitalize()}**")
+                    st.code(v, language=None)
+
+
+# ---------------------------------------------------------------------------
+# Page 6 — Settings
 # ---------------------------------------------------------------------------
 def render_settings():
     st.markdown("<div class='section-title'>⚙️ Settings</div>", unsafe_allow_html=True)
@@ -659,6 +837,8 @@ def main():
         render_campaigns()
     elif page == "📈 Analytics":
         render_analytics()
+    elif page == "🌐 Référencement":
+        render_referencement()
     elif page == "⚙️ Settings":
         render_settings()
 
