@@ -525,53 +525,6 @@ def render_analytics():
 
     st.markdown(f"<br><div style='color:#94a3b8;font-size:0.8rem;'>Total stars : <b style='color:#fbbf24;'>{total_stars} ⭐</b> — actualisé toutes les 5 min</div>", unsafe_allow_html=True)
 
-    st.divider()
-
-    # --- LinkedIn Stats (manual) ---
-    st.markdown("#### LinkedIn — Saisie manuelle")
-    st.info("LinkedIn n'a pas d'API publique — entre tes stats manuellement (depuis linkedin.com/company/medflow-ai → Analytics).")
-
-    with st.form("linkedin_form"):
-        c1, c2, c3, c4 = st.columns(4)
-        followers  = c1.number_input("Abonnés page", min_value=0, value=st.session_state.get("li_followers", 0))
-        impressions = c2.number_input("Impressions (7j)", min_value=0, value=st.session_state.get("li_impressions", 0))
-        clicks     = c3.number_input("Clics (7j)", min_value=0, value=st.session_state.get("li_clicks", 0))
-        leads      = c4.number_input("Contacts entrants", min_value=0, value=st.session_state.get("li_leads", 0))
-        if st.form_submit_button("💾 Sauvegarder"):
-            st.session_state["li_followers"]   = followers
-            st.session_state["li_impressions"] = impressions
-            st.session_state["li_clicks"]      = clicks
-            st.session_state["li_leads"]       = leads
-            st.success("Stats LinkedIn mises à jour.")
-
-    if st.session_state.get("li_followers"):
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Abonnés",       st.session_state["li_followers"])
-        c2.metric("Impressions 7j", st.session_state["li_impressions"])
-        c3.metric("Clics 7j",       st.session_state["li_clicks"])
-        c4.metric("Leads entrants", st.session_state["li_leads"])
-
-    st.divider()
-
-    # --- Landing page visits (UTM / manual) ---
-    st.markdown("#### Landing Page — Visites")
-    st.info("Streamlit Cloud ne fournit pas de stats de visites. Ajoute Google Analytics à ta landing page pour un suivi automatique — ou entre les stats manuellement depuis share.streamlit.io.")
-    with st.form("landing_form"):
-        c1, c2, c3 = st.columns(3)
-        visits_7d  = c1.number_input("Visites (7j)",   min_value=0, value=st.session_state.get("lp_visits7",  0))
-        visits_30d = c2.number_input("Visites (30j)",  min_value=0, value=st.session_state.get("lp_visits30", 0))
-        bounces    = c3.number_input("Taux rebond (%)", min_value=0, value=st.session_state.get("lp_bounce",  0))
-        if st.form_submit_button("💾 Sauvegarder"):
-            st.session_state["lp_visits7"]  = visits_7d
-            st.session_state["lp_visits30"] = visits_30d
-            st.session_state["lp_bounce"]   = bounces
-            st.success("Stats landing mises à jour.")
-
-    if st.session_state.get("lp_visits7"):
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Visites 7j",     st.session_state["lp_visits7"])
-        c2.metric("Visites 30j",    st.session_state["lp_visits30"])
-        c3.metric("Taux rebond",    f"{st.session_state['lp_bounce']} %")
 
 
 # ---------------------------------------------------------------------------
@@ -792,6 +745,46 @@ def render_settings():
             os.environ["GMAIL_ADDRESS"] = gmail_address
             os.environ["GMAIL_APP_PASSWORD"] = gmail_password
             st.success("Clés mises à jour pour cette session.")
+
+    st.divider()
+    st.markdown("#### 🛒 Créer les produits Stripe")
+    st.markdown("Crée automatiquement les 6 produits + prix récurrents + liens de paiement sur ton compte Stripe.")
+
+    if st.button("🚀 Créer les 6 produits Stripe", type="primary"):
+        key = os.environ.get("STRIPE_API_KEY", "")
+        if not key or not key.startswith("sk_"):
+            st.error("Clé STRIPE_API_KEY manquante ou invalide. Sauvegarde-la d'abord ci-dessus.")
+        else:
+            import stripe as stripe_lib
+            stripe_lib.api_key = key
+            products_to_create = [
+                {"name": "BioReport AI",      "price_cents": 4900,  "desc": "Interprétation automatique de bilans biologiques (PDF/photo/texte → rapport 5 sections)."},
+                {"name": "MedFlow Posologie", "price_cents": 3900,  "desc": "Recommandation posologique IA adaptée au patient (insuffisance rénale, transplant, pédiatrie)."},
+                {"name": "AMR-AI",            "price_cents": 6900,  "desc": "Prédiction de résistance aux antibiotiques et interprétation d'antibiogramme en temps réel."},
+                {"name": "CardioSurg AI",     "price_cents": 7900,  "desc": "Score de risque chirurgical cardiaque et prédiction de mortalité avec explications XAI."},
+                {"name": "GenGI",             "price_cents": 9900,  "desc": "Prédiction de pathogénicité de variants génétiques à partir de données WES."},
+                {"name": "MYOomics",          "price_cents": 14900, "desc": "Plateforme multi-omique scRNA-seq pour la recherche sur les myopathies."},
+            ]
+            results = []
+            progress = st.progress(0)
+            for i, p in enumerate(products_to_create):
+                try:
+                    prod = stripe_lib.Product.create(name=p["name"], description=p["desc"])
+                    price = stripe_lib.Price.create(
+                        product=prod.id,
+                        unit_amount=p["price_cents"],
+                        currency="eur",
+                        recurring={"interval": "month"},
+                    )
+                    link = stripe_lib.PaymentLink.create(line_items=[{"price": price.id, "quantity": 1}])
+                    results.append({"Produit": p["name"], "Prix": f"{p['price_cents']//100} €/mois", "Lien": link.url, "Statut": "✅"})
+                except Exception as e:
+                    results.append({"Produit": p["name"], "Prix": "", "Lien": str(e)[:80], "Statut": "❌"})
+                progress.progress((i + 1) / len(products_to_create))
+            st.dataframe(pd.DataFrame(results), use_container_width=True)
+            ok = [r for r in results if r["Statut"] == "✅"]
+            if ok:
+                st.success(f"✅ {len(ok)} produits créés. Copie les liens ci-dessus dans ta landing page.")
 
     st.divider()
     st.markdown("#### 🏷 Produits")
