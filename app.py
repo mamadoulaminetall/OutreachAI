@@ -48,7 +48,10 @@ st.set_page_config(
 # Auth gate
 # ---------------------------------------------------------------------------
 def _check_auth():
-    pwd_ok = os.environ.get("OUTREACH_PASSWORD") or st.secrets.get("OUTREACH_PASSWORD", "medflow2026")
+    try:
+        pwd_ok = os.environ.get("OUTREACH_PASSWORD") or st.secrets.get("OUTREACH_PASSWORD", "medflow2026")
+    except Exception:
+        pwd_ok = os.environ.get("OUTREACH_PASSWORD", "medflow2026")
     if st.session_state.get("authenticated"):
         return True
     st.markdown("""
