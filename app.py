@@ -45,6 +45,33 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------------------------
+# Auth gate
+# ---------------------------------------------------------------------------
+def _check_auth():
+    pwd_ok = os.environ.get("OUTREACH_PASSWORD") or st.secrets.get("OUTREACH_PASSWORD", "medflow2026")
+    if st.session_state.get("authenticated"):
+        return True
+    st.markdown("""
+    <div style='max-width:380px;margin:120px auto 0;text-align:center;'>
+      <div style='font-size:2rem;'>🚀</div>
+      <h2 style='color:#3b82f6;margin:12px 0 4px 0;font-size:1.4rem;'>OutreachAI</h2>
+      <p style='color:#64748b;font-size:0.82rem;margin-bottom:24px;'>Accès réservé — MedFlow AI</p>
+    </div>
+    """, unsafe_allow_html=True)
+    col = st.columns([1, 2, 1])[1]
+    with col:
+        entered = st.text_input("Mot de passe", type="password", placeholder="••••••••••", label_visibility="collapsed")
+        if st.button("Connexion", use_container_width=True, type="primary"):
+            if entered == pwd_ok:
+                st.session_state["authenticated"] = True
+                st.rerun()
+            else:
+                st.error("Mot de passe incorrect.")
+    st.stop()
+
+_check_auth()
+
+# ---------------------------------------------------------------------------
 # CSS
 # ---------------------------------------------------------------------------
 st.markdown("""
