@@ -90,6 +90,8 @@ DEFAULT_PRODUCTS = [
     {"name": "MedFlow Posologie", "desc": "AI-powered drug dosage recommender adapted to patient context (renal function, transplant, pediatrics).", "price": "39 €/mois"},
     {"name": "AMR-AI",            "desc": "Antimicrobial resistance prediction and antibiogram interpretation for clinical microbiology labs.", "price": "69 €/mois"},
     {"name": "CardioSurg AI",     "desc": "Surgical risk scoring and cardiac surgery outcome prediction with XAI explanations.", "price": "79 €/mois"},
+    {"name": "CNV Diagnostic",    "desc": "Interactive CNV detection and visualization — chromosomal microarray analysis, 25 studies, 79,417 patients, 6 clinical indications.", "price": "79 €/mois"},
+    {"name": "Microbiome & Cancer", "desc": "Early cancer detection via microbiome profiling — meta-analysis of 18 studies, 2,587 patients, 5 cancer types (colon, lung, breast, prostate, pancreas).", "price": "89 €/mois"},
 ]
 
 STATUS_OPTIONS = ["draft", "sent", "replied", "converted", "archived"]
@@ -470,11 +472,13 @@ def render_campaigns():
 # Page 4 — Analytics
 # ---------------------------------------------------------------------------
 GITHUB_REPOS = [
-    {"name": "BioReport AI",      "repo": "mamadoulaminetall/BioReport-AI",        "url": "https://bioreport-ai.streamlit.app"},
-    {"name": "GenGI",             "repo": "mamadoulaminetall/GenGI",               "url": "https://gengi-ai.streamlit.app"},
-    {"name": "MYOomics",          "repo": "mamadoulaminetall/MYOomics",            "url": "https://myoomics.streamlit.app"},
-    {"name": "OutreachAI",        "repo": "mamadoulaminetall/OutreachAI",          "url": "https://outreach-ai.streamlit.app"},
-    {"name": "MedFlow Landing",   "repo": "mamadoulaminetall/MedFlowAI_Landing",   "url": "https://medflow-ai.streamlit.app"},
+    {"name": "BioReport AI",        "repo": "mamadoulaminetall/BioReport-AI",                                "url": "https://bioreport-ai.streamlit.app"},
+    {"name": "GenGI",               "repo": "mamadoulaminetall/GenGI",                                       "url": "https://gengi-ai.streamlit.app"},
+    {"name": "MYOomics",            "repo": "mamadoulaminetall/MYOomics",                                    "url": "https://myoomics.streamlit.app"},
+    {"name": "OutreachAI",          "repo": "mamadoulaminetall/OutreachAI",                                  "url": "https://outreach-ai.streamlit.app"},
+    {"name": "MedFlow Landing",     "repo": "mamadoulaminetall/MedFlowAI_Landing",                          "url": "https://medflow-ai.streamlit.app"},
+    {"name": "CNV Diagnostic",      "repo": "mamadoulaminetall/D-tection-de-CNV-et-Visualisation-Interactive-", "url": "https://github.com/mamadoulaminetall/D-tection-de-CNV-et-Visualisation-Interactive-"},
+    {"name": "Microbiome & Cancer", "repo": "mamadoulaminetall/microbiome_diagnostic_cancer_precoce",        "url": "https://github.com/mamadoulaminetall/microbiome_diagnostic_cancer_precoce"},
 ]
 
 @st.cache_data(ttl=300)
@@ -579,6 +583,30 @@ BIOTOOLS_ENTRIES = [
         "license": "Proprietary",
         "credit": [{"name":"Mamadou Lamine TALL","url":"https://github.com/mamadoulaminetall","typeRole":["Developer"]}],
     },
+    {
+        "name": "CNV Diagnostic",
+        "description": "Interactive CNV detection and visualization tool based on chromosomal microarray analysis. Meta-analysis of 25 studies (79,417 patients) across 6 clinical indications including intellectual disability, autism, and congenital anomalies.",
+        "homepage": "https://github.com/mamadoulaminetall/D-tection-de-CNV-et-Visualisation-Interactive-",
+        "topics": [{"uri":"http://edamontology.org/topic_0622","term":"Genomics"},{"uri":"http://edamontology.org/topic_3676","term":"Exome sequencing"},{"uri":"http://edamontology.org/topic_0199","term":"Genetic variation"}],
+        "functions": [{"operation":[{"uri":"http://edamontology.org/operation_3233","term":"Copy number variation detection"}],"input":[],"output":[]}],
+        "toolType": ["Web application"],
+        "language": ["Python"],
+        "operatingSystem": ["Linux","Mac","Windows"],
+        "license": "MIT",
+        "credit": [{"name":"Mamadou Lamine TALL","url":"https://github.com/mamadoulaminetall","typeRole":["Developer"]}],
+    },
+    {
+        "name": "Microbiome Cancer",
+        "description": "Early cancer detection via gut microbiome profiling. Meta-analysis of 18 studies (2,587 patients) covering 5 cancer types: colorectal, lung, breast, prostate, and pancreatic cancer.",
+        "homepage": "https://github.com/mamadoulaminetall/microbiome_diagnostic_cancer_precoce",
+        "topics": [{"uri":"http://edamontology.org/topic_3301","term":"Microbiology"},{"uri":"http://edamontology.org/topic_2640","term":"Oncology"},{"uri":"http://edamontology.org/topic_3174","term":"Metagenomics"}],
+        "functions": [{"operation":[{"uri":"http://edamontology.org/operation_3658","term":"Statistical inference"}],"input":[],"output":[]}],
+        "toolType": ["Web application"],
+        "language": ["Python"],
+        "operatingSystem": ["Linux","Mac","Windows"],
+        "license": "MIT",
+        "credit": [{"name":"Mamadou Lamine TALL","url":"https://github.com/mamadoulaminetall","typeRole":["Developer"]}],
+    },
 ]
 
 def _submit_biotool(entry: dict, token: str) -> tuple[bool, str]:
@@ -639,7 +667,7 @@ def render_referencement():
                             st.error(msg)
 
         st.divider()
-        if st.button("📤 Soumettre les 4 outils d'un coup", type="primary"):
+        if st.button("📤 Soumettre les 6 outils d'un coup", type="primary"):
             if not token:
                 st.error("Token manquant.")
             else:
@@ -668,8 +696,10 @@ MedFlow AI is a growing suite of focused tools:
 • MYOomics — scRNA-seq platform for neuromuscular disease research
 • AMR-AI — antimicrobial resistance prediction for microbiology labs
 • CardioSurg AI — surgical risk scoring with explainability
+• CNV Diagnostic — chromosomal microarray CNV detection & visualization
+• Microbiome & Cancer — early cancer detection via gut microbiome profiling
 
-All tools: https://medflowailanding.streamlit.app""",
+All tools: https://medflow-ai.fr""",
         }
         for label, value in fields.items():
             st.markdown(f"**{label}**")
@@ -697,6 +727,14 @@ All tools: https://medflowailanding.streamlit.app""",
              "github": "https://github.com/mamadoulaminetall/OutreachAI",
              "category": "Business / Productivity",
              "desc": "Track leads, revenue, and campaigns. Claude-powered personalized email generation for solo founders and small sales teams."},
+            {"name": "CNV Diagnostic — Interactive CNV Visualization", "url": "https://github.com/mamadoulaminetall/D-tection-de-CNV-et-Visualisation-Interactive-",
+             "github": "https://github.com/mamadoulaminetall/D-tection-de-CNV-et-Visualisation-Interactive-",
+             "category": "Science & Technology / Bioinformatics",
+             "desc": "Interactive CNV detection and visualization tool. Chromosomal microarray analysis across 6 clinical indications (79,417 patients)."},
+            {"name": "Microbiome & Cancer — Early Detection", "url": "https://github.com/mamadoulaminetall/microbiome_diagnostic_cancer_precoce",
+             "github": "https://github.com/mamadoulaminetall/microbiome_diagnostic_cancer_precoce",
+             "category": "Science & Technology / Bioinformatics",
+             "desc": "Early cancer detection via gut microbiome profiling. Meta-analysis of 18 studies, 2,587 patients, 5 cancer types."},
         ]
         for app in apps:
             with st.expander(f"**{app['name']}**", expanded=False):
@@ -748,9 +786,9 @@ def render_settings():
 
     st.divider()
     st.markdown("#### 🛒 Créer les produits Stripe")
-    st.markdown("Crée automatiquement les 6 produits + prix récurrents + liens de paiement sur ton compte Stripe.")
+    st.markdown("Crée automatiquement les 8 produits + prix récurrents + liens de paiement sur ton compte Stripe.")
 
-    if st.button("🚀 Créer les 6 produits Stripe", type="primary"):
+    if st.button("🚀 Créer les 8 produits Stripe", type="primary"):
         key = os.environ.get("STRIPE_API_KEY", "")
         if not key or not key.startswith("sk_"):
             st.error("Clé STRIPE_API_KEY manquante ou invalide. Sauvegarde-la d'abord ci-dessus.")
@@ -763,7 +801,9 @@ def render_settings():
                 {"name": "AMR-AI",            "price_cents": 6900,  "desc": "Prédiction de résistance aux antibiotiques et interprétation d'antibiogramme en temps réel."},
                 {"name": "CardioSurg AI",     "price_cents": 7900,  "desc": "Score de risque chirurgical cardiaque et prédiction de mortalité avec explications XAI."},
                 {"name": "GenGI",             "price_cents": 9900,  "desc": "Prédiction de pathogénicité de variants génétiques à partir de données WES."},
-                {"name": "MYOomics",          "price_cents": 14900, "desc": "Plateforme multi-omique scRNA-seq pour la recherche sur les myopathies."},
+                {"name": "MYOomics",            "price_cents": 14900, "desc": "Plateforme multi-omique scRNA-seq pour la recherche sur les myopathies."},
+                {"name": "CNV Diagnostic",      "price_cents": 7900,  "desc": "Détection de CNV et visualisation interactive — CMA chromosomique, 79 417 patients, 6 indications cliniques."},
+                {"name": "Microbiome & Cancer", "price_cents": 8900,  "desc": "Détection précoce du cancer via profil microbiomique — 18 études, 2 587 patients, 5 cancers."},
             ]
             results = []
             progress = st.progress(0)
@@ -784,7 +824,7 @@ def render_settings():
             st.dataframe(pd.DataFrame(results), use_container_width=True)
             ok = [r for r in results if r["Statut"] == "✅"]
             if ok:
-                st.success(f"✅ {len(ok)} produits créés. Copie les liens ci-dessus dans ta landing page.")
+                st.success(f"✅ {len(ok)} produits créés. Copie les liens ci-dessus dans ta landing page medflow-ai.fr.")
 
     st.divider()
     st.markdown("#### 🏷 Produits")
